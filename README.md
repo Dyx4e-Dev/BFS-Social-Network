@@ -1,6 +1,6 @@
 # Information Spread Analysis Using Graph and BFS
 
-> **University Final Project — Data Structures Course**
+> **Uiversitas Teknologi Bandung — Data Structures Course**
 > 
 > Demonstrates practical implementation of **Graph (Adjacency List)**, **Queue**, and **Breadth-First Search (BFS)** through a real-world simulation of information propagation in a social network.
 
