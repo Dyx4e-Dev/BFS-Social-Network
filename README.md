@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Information Spread Analysis Using Graph and BFS
 
 > **University Final Project — Data Structures Course**
