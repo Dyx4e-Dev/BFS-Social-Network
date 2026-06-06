@@ -1,7 +1,9 @@
 # Information Spread Analysis Using Graph and BFS
 
 > **Name : Dika Pida Ismail**
+>
 > **NIM : 25552011148**
+>
 > **Bandung University of Technology — Data Structures Course**
 > 
 > Demonstrates practical implementation of **Graph (Adjacency List)**, **Queue**, and **Breadth-First Search (BFS)** through a real-world simulation of information propagation in a social network.
