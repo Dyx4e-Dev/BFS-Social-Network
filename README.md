@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Information Spread Analysis Using Graph and BFS
 
 > **University Final Project — Data Structures Course**
@@ -444,3 +445,6 @@ All other logic (Graph, BFS, Queue) is implemented in pure Python standard libra
 - ✅ Real-world application (social network simulation)
 - ✅ Algorithmic complexity analysis
 - ✅ Interactive visualization for presentations
+=======
+# BFS-Social-Network
+>>>>>>> b589008a3c33f8d1319c89a16aacba63f8308b3e
