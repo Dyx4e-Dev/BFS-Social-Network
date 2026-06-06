@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Information Spread Analysis using Graph and BFS — Data Structures University Project." />
+  <title>BFS Social Network Simulator — Data Structures Project</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.29.2/cytoscape.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header" role="banner">
+    <div class="header-brand">
+      <div class="header-icon" aria-hidden="true">⬡</div>
+      <div class="header-title">
+        <h1 data-i18n="header.title">BFS Social Network Simulator</h1>
+        <span data-i18n="header.subtitle">Data Structures · Graph · BFS · Queue · Adjacency List</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="header-source-wrap">
+        <label for="source-select" data-i18n="header.source-label">Source Node:</label>
+        <select id="source-select" aria-label="Select source node">
+          <option value="">— select —</option>
+        </select>
+      </div>
+
+      <button id="btn-simulate"  class="btn btn-gold"  data-i18n="header.btn-simulate">▶ Start Simulation</button>
+      <button id="btn-pause"     class="btn btn-ghost" data-i18n="header.btn-pause"    disabled>⏸ Pause</button>
+      <button id="btn-resume"    class="btn btn-ghost" data-i18n="header.btn-resume"   disabled>▶ Resume</button>
+      <button id="btn-reset-sim" class="btn btn-ghost" data-i18n="header.btn-reset"    disabled>↺ Reset</button>
+
+      <!-- Language toggle -->
+      <button id="btn-lang-toggle" class="btn btn-lang" title="Switch to Bahasa Indonesia">
+        <span class="lang-flag">🇮🇩</span> ID
+      </button>
+
+      <div id="status-badge" class="status-badge idle" role="status" aria-live="polite">
+        <span class="status-dot"></span><span id="status-text" data-i18n="status.idle">Idle</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" role="complementary">
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.add-node.title">Add Node</div>
+      <div class="form-group">
+        <label for="input-node-id" data-i18n="sidebar.add-node.label">Node Name / ID</label>
+        <div class="form-row">
+          <input type="text" id="input-node-id"
+                 data-i18n-placeholder="sidebar.add-node.placeholder"
+                 placeholder="e.g. Alice" maxlength="30" autocomplete="off" />
+          <button id="btn-add-node" class="btn btn-primary btn-icon"
+                  data-i18n-title="sidebar.add-node.btn-title" title="Add node">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.add-edge.title">Add Edge</div>
+      <div class="form-group">
+        <label for="input-edge-source" data-i18n="sidebar.add-edge.from">From</label>
+        <input type="text" id="input-edge-source"
+               data-i18n-placeholder="sidebar.add-edge.from-ph"
+               placeholder="Source node" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="input-edge-target" data-i18n="sidebar.add-edge.to">To</label>
+        <input type="text" id="input-edge-target"
+               data-i18n-placeholder="sidebar.add-edge.to-ph"
+               placeholder="Target node" autocomplete="off" />
+      </div>
+      <button id="btn-add-edge" class="btn btn-success btn-full" data-i18n="sidebar.add-edge.btn">＋ Add Edge</button>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.del-edge.title">Delete Edge</div>
+      <div class="form-group">
+        <label for="input-del-edge-source" data-i18n="sidebar.del-edge.from">From</label>
+        <input type="text" id="input-del-edge-source"
+               data-i18n-placeholder="sidebar.del-edge.from-ph"
+               placeholder="Source node" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="input-del-edge-target" data-i18n="sidebar.del-edge.to">To</label>
+        <input type="text" id="input-del-edge-target"
+               data-i18n-placeholder="sidebar.del-edge.to-ph"
+               placeholder="Target node" autocomplete="off" />
+      </div>
+      <button id="btn-del-edge" class="btn btn-danger btn-full" data-i18n="sidebar.del-edge.btn">✕ Remove Edge</button>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.random.title">Generate Random Graph</div>
+      <div class="random-opts">
+        <div class="form-group">
+          <label for="random-nodes" data-i18n="sidebar.random.nodes-label">Nodes</label>
+          <input type="text" id="random-nodes" value="10" maxlength="2"/>
+        </div>
+        <div class="form-group">
+          <label for="random-density" data-i18n="sidebar.random.density-label">Density</label>
+          <input type="text" id="random-density" value="0.01" maxlength="4" />
+        </div>
+      </div>
+      <button id="btn-random" class="btn btn-warning btn-full" data-i18n="sidebar.random.btn">⚡ Generate</button>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.file.title">Graph File</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button id="btn-save"  class="btn btn-ghost btn-full" data-i18n="sidebar.file.save">💾 Save to JSON</button>
+        <button id="btn-load"  class="btn btn-ghost btn-full" data-i18n="sidebar.file.load">📂 Load from JSON</button>
+        <button id="btn-clear" class="btn btn-danger btn-full" data-i18n="sidebar.file.clear">🗑 Clear Graph</button>
+      </div>
+      <input type="file" id="load-file-input" accept=".json" style="display:none" />
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.step.title">Step-by-Step BFS</div>
+      <div class="step-controls">
+        <button id="btn-step-init" class="btn btn-primary btn-full" data-i18n="sidebar.step.init">⚙ Initialize BFS</button>
+        <button id="btn-step-next" class="btn btn-success btn-full" data-i18n="sidebar.step.next" disabled>⏭ Next Step</button>
+      </div>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.speed.title">Animation Speed</div>
+      <div class="speed-control">
+        <div class="speed-row">
+          <label for="speed-slider" data-i18n="sidebar.speed.label">Delay</label>
+          <span id="speed-display" class="text-accent mono">800ms</span>
+        </div>
+        <input type="range" id="speed-slider" min="100" max="2500" step="100" value="800" />
+        <div class="range-labels">
+          <span data-i18n="sidebar.speed.fast">Fast (100ms)</span>
+          <span data-i18n="sidebar.speed.slow">Slow (2.5s)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-title" data-i18n="sidebar.legend.title">Node State Legend</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot source"></div>
+          <span data-i18n="sidebar.legend.source">Source node (BFS start)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot uninformed"></div>
+          <span data-i18n="sidebar.legend.uninformed">Uninformed (not yet reached)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot queued"></div>
+          <span data-i18n="sidebar.legend.queued">Queued (discovered, waiting)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot informed"></div>
+          <span data-i18n="sidebar.legend.informed">Informed (visited / spread)</span>
+        </div>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- CANVAS -->
+  <main id="canvas-area" role="main">
+    <div id="cy"></div>
+    <div id="empty-graph-msg" style="display:none;">
+      <div style="font-size:3rem;margin-bottom:8px;">⬡</div>
+      <h3 data-i18n="canvas.empty.title">Graph is empty</h3>
+      <p data-i18n="canvas.empty.desc">Add nodes using the sidebar, or generate a random graph.</p>
+    </div>
+    <div id="loading-overlay"><div class="loading-spinner"></div></div>
+    <div class="canvas-overlay" role="toolbar">
+      <button class="canvas-btn" id="btn-zoom-in"  data-i18n-title="canvas.btn.zoom-in"  title="Zoom in">+</button>
+      <button class="canvas-btn" id="btn-zoom-out" data-i18n-title="canvas.btn.zoom-out" title="Zoom out">−</button>
+      <button class="canvas-btn" id="btn-fit"      data-i18n-title="canvas.btn.fit"      title="Fit to screen">⊡</button>
+      <button class="canvas-btn" id="btn-relayout" data-i18n-title="canvas.btn.relayout" title="Re-run layout">⟳</button>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside id="right-panel" role="complementary">
+
+    <nav class="panel-tabs" role="tablist">
+      <button class="panel-tab active" data-tab="tab-analytics" role="tab">
+        <span class="tab-icon">📊</span>
+        <span data-i18n="tab.analytics">Analytics</span>
+      </button>
+      <button class="panel-tab" data-tab="tab-queue" role="tab">
+        <span class="tab-icon">📭</span>
+        <span data-i18n="tab.queue">Queue</span>
+      </button>
+      <button class="panel-tab" data-tab="tab-adj" role="tab">
+        <span class="tab-icon">🔗</span>
+        <span data-i18n="tab.adj">Adj. List</span>
+      </button>
+      <button class="panel-tab" data-tab="tab-complexity" role="tab">
+        <span class="tab-icon">⚙</span>
+        <span data-i18n="tab.complexity">Complexity</span>
+      </button>
+    </nav>
+
+    <!-- ANALYTICS TAB -->
+    <div id="tab-analytics" class="panel-content active" role="tabpanel">
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.total-nodes">Total Nodes (V)</div>
+          <div class="card-value accent-blue" id="stat-total-nodes">—</div>
+        </div>
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.total-edges">Total Edges (E)</div>
+          <div class="card-value accent-teal" id="stat-total-edges">—</div>
+        </div>
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.visited">Nodes Informed</div>
+          <div class="card-value accent-green" id="stat-visited">—</div>
+        </div>
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.depth">Spread Depth</div>
+          <div class="card-value accent-gold" id="stat-depth">—</div>
+        </div>
+      </div>
+
+      <div class="analytics-card-wide">
+        <div class="card-label" data-i18n="analytics.reachability">Network Reachability</div><span id="reach-pct-label">—
+        <div class="reach-bar-wrap">
+          <div class="reach-bar-track"><div class="reach-bar-fill" id="reach-bar-fill"></div></div>
+          <div class="reach-bar-label">
+            <span>0%</span></span><span>100%</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-section-title" data-i18n="analytics.centrality.title">Centrality Analytics</div>
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <div class="card-label" data-i18n="analytics.influencer">Top Influencer (In-Degree)</div>
+            <div class="card-value accent-gold" style="font-size:16px;" id="stat-top-influencer">—</div>
+          </div>
+          <div class="analytics-card">
+            <div class="card-label" data-i18n="analytics.active">Most Active (Out-Degree)</div>
+            <div class="card-value accent-teal" style="font-size:16px;" id="stat-most-active">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.first">First Informed</div>
+          <div class="card-value" style="font-size:13px;font-family:'JetBrains Mono',monospace;" id="stat-first-informed">—</div>
+        </div>
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="analytics.last">Last Informed</div>
+          <div class="card-value" style="font-size:13px;font-family:'JetBrains Mono',monospace;" id="stat-last-informed">—</div>
+        </div>
+      </div>
+
+      <div class="bfs-order-display">
+        <div class="card-label" data-i18n="analytics.bfs-order-chips">BFS Traversal Order</div>
+        <div class="bfs-order-chips" id="bfs-order-chips"></div>
+      </div>
+
+      <div class="analytics-card-wide">
+        <div class="card-label" data-i18n="analytics.bfs-order-text">BFS Order (sequence)</div>
+        <div class="card-text" id="stat-bfs-order">—</div>
+      </div>
+
+      <div>
+        <div class="panel-section-title" data-i18n="analytics.levels.title">Spread Levels</div>
+        <div class="levels-display" id="levels-display"></div>
+      </div>
+
+      <div>
+        <div class="panel-section-title" data-i18n="analytics.log.title">BFS Step Log</div>
+        <div class="step-log" id="step-log" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- QUEUE TAB -->
+    <div id="tab-queue" class="panel-content" role="tabpanel">
+      <div class="panel-section-title" data-i18n="queue.current">Current Queue State</div>
+
+      <div class="queue-display">
+        <div class="queue-display-header">
+          <span data-i18n="queue.fifo">Queue (FIFO)</span>
+          <span class="queue-count-badge" id="queue-count">0</span>
+        </div>
+        <div class="queue-track" id="queue-track" aria-live="polite">
+          <span class="queue-empty" data-i18n="queue.empty">Queue is empty</span>
+        </div>
+        <div class="queue-labels">
+          <span data-i18n="queue.dequeue-lbl">← Dequeue (front)</span>
+          <span data-i18n="queue.enqueue-lbl">Enqueue (back) →</span>
+        </div>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="queue.how.title">🗂 How the Queue Works</h4>
+        <p data-i18n-html="queue.how.body" style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          BFS uses a FIFO Queue to process nodes level-by-level.
+        </p>
+      </div>
+
+      <div>
+        <div class="panel-section-title" data-i18n="queue.order.title">BFS Visit Order</div>
+        <div class="bfs-order-display">
+          <div class="bfs-order-chips" id="bfs-order-chips-queue"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-section-title" data-i18n="queue.log.title">Live Operation Log</div>
+        <div class="step-log" id="step-log-queue" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <!-- ADJACENCY LIST TAB -->
+    <div id="tab-adj" class="panel-content" role="tabpanel">
+      <div class="panel-section-title" data-i18n="adj.title">Adjacency List (Live)</div>
+
+      <div class="adj-list-container">
+        <div class="adj-list-header">
+          <span data-i18n="adj.header">Node → Neighbors</span>
+        </div>
+        <div class="adj-list-body" id="adj-list-body" aria-live="polite"></div>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="adj.explain.title">📋 Adjacency List Structure</h4>
+        <p data-i18n-html="adj.explain.body" style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          Each node maps to a list of its neighbors.
+        </p>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="adj.nodes">Nodes (V)</div>
+          <div class="card-value accent-blue" id="adj-stat-nodes">—</div>
+        </div>
+        <div class="analytics-card">
+          <div class="card-label" data-i18n="adj.edges">Edges (E)</div>
+          <div class="card-value accent-teal" id="adj-stat-edges">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLEXITY TAB -->
+    <div id="tab-complexity" class="panel-content" role="tabpanel">
+      <div class="panel-section-title" data-i18n="complex.title">BFS Complexity Analysis</div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="complex.bfs.title">⏱ BFS Algorithm</h4>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.time">Time Complexity</span>
+          <span class="complexity-value">O(V + E)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.space">Space Complexity</span>
+          <span class="complexity-value">O(V)</span>
+        </div>
+        <pre class="complexity-note" id="complex-bfs-note">V = number of nodes (vertices)
+E = number of edges
+
+Time: Each node is enqueued exactly once → O(V).
+Each edge is examined twice → O(E).
+Total: O(V + E).
+
+Space: Queue holds at most V nodes.
+Visited set holds at most V entries.
+Total extra space: O(V).</pre>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="complex.graph.title">🗂 Graph (Adjacency List)</h4>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.graph.storage">Storage</span>
+          <span class="complexity-value">O(V + E)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.graph.add-node">Add node</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.graph.add-edge">Add edge</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.graph.del-node">Remove node</span>
+          <span class="complexity-value">O(V + E)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.graph.neighbors">Get neighbors</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="complex.queue.title">📭 Queue (collections.deque)</h4>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.queue.enqueue">Enqueue</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.queue.dequeue">Dequeue</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.queue.peek">Peek (front)</span>
+          <span class="complexity-value">O(1)</span>
+        </div>
+        <div class="complexity-item">
+          <span class="complexity-label" data-i18n="complex.queue.space">Space</span>
+          <span class="complexity-value">O(V)</span>
+        </div>
+        <div class="complexity-note" id="complex-queue-note">
+          Python's collections.deque is a doubly-linked list providing O(1) appends and popleft — ideal for BFS.
+        </div>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="complex.why.title">🔍 Why BFS?</h4>
+        <div class="complexity-note" id="complex-why-note">
+          BFS explores the graph level by level — exactly how information spreads through a social network.
+        </div>
+      </div>
+
+      <div class="complexity-box">
+        <h4 data-i18n="complex.pseudo.title">📄 BFS Pseudocode</h4>
+        <pre class="complexity-note" id="complex-pseudo-code" style="white-space:pre;overflow-x:auto;">BFS(Graph G, source s):
+  queue   ← deque([s])
+  visited ← {s}
+  level[s] ← 0
+
+  while queue is not empty:
+    u ← queue.popleft()    # dequeue
+
+    for each neighbor v of u:
+      if v not in visited:
+        visited.add(v)
+        level[v] ← level[u] + 1
+        queue.append(v)   # enqueue
+
+  return visited, level</pre>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<div id="toast-container" role="region" aria-live="polite"></div>
+
+<!-- Load order is critical: translations → graph → bfs → ui -->
+<script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bfs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+</body>
+</html>
